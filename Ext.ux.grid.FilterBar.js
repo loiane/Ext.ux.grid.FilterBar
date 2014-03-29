@@ -946,6 +946,19 @@ Ext.define('Ext.ux.grid.FilterBar', {
 		me.fireEvent('filterupdated', me.filterArray);
 	},
 
+	setFilterBar: function(property, value, operator) {
+		var me = this;
+
+		me.grid.filterBar.fields.eachKey(function(index, field){
+			if(index == property) {
+				if (operator) {
+					field.operator = operator;
+				};
+				field.setValue(value);
+			}
+		})
+	},
+
 	isVisible: function() {
 		var me = this;
 
