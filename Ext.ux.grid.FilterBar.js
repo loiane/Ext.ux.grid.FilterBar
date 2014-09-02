@@ -3,7 +3,7 @@
  * The header filters are integrated with new Ext4 <code>Ext.data.Store</code> filters.<br>
  *
  * @author Ing. Leonardo D'Onofrio (leonardo_donofrio at hotmail.com)
- * @version 1.1 (supports 4.1.1)
+ * @version 1.1.2 (supports 4.1.1)
  * @updated 2011-10-18 by Ing. Leonardo D'Onofrio (leonardo_donofrio at hotmail.com)
  * Support renderHidden config option, isVisible(), and setVisible() methods (added getFilterBar() method to the grid)
  * Fix filter bug that append filters to Store filters MixedCollection
@@ -51,173 +51,175 @@
  * @updated 2012-07-31 by Ing. Leonardo D'Onofrio (leonardo_donofrio at hotmail.com)
  * Added operator selection in number and date filters
  * @updated 2013-09-06 by Joe Nilson (joenilson at gmail dot com)
- * Changed to docked bar to work with grouped header, using the code from: 
+ * Changed to docked bar to work with grouped header, using the code from:
  * http://www.sencha.com/forum/showthread.php?152923-Ext.ux.grid.FilterBar-plugin&p=917075&viewfull=1#post917075
  * @updated 2013-09-11 by Joe Nilson (joenilson at gmail dot com)
  * Fixed docked bar to render correctly the checkbox header column in selmodel
- * @updated 2013-11-15 by Joe Nilson (joenilson at gmail fot com)
+ * @updated 2013-11-15 by Joe Nilson (joenilson at gmail dot com)
  * Applied a fix to rendering the column headers using the code from:
  * http://www.sencha.com/forum/showthread.php?152923-Ext.ux.grid.FilterBar-plugin&p=1002888&viewfull=1#post1002888
  * @updated 2013-11-15 by Loiane Groner (me at loiane dot com)
  * Applied a fix to disable filter using the code from:
  * http://www.sencha.com/forum/showthread.php?152923-Ext.ux.grid.FilterBar-plugin&p=1035991&viewfull=1#post1035991
-*/
+ * @updated 2014-09-02 by Pat Mächler (p.maechler at iwf.ch)
+ * Fixed major code quality issues with JSHint
+ */
 
 Ext.define('Ext.ux.grid.FilterBar', {
-	extend: 'Ext.AbstractPlugin',
-	alias: 'plugin.filterbar',
-	uses: [
-		'Ext.window.MessageBox',
-		'Ext.ux.form.field.ClearButton',
-		'Ext.ux.form.field.OperatorButton',
-		'Ext.container.Container',
-		'Ext.util.DelayedTask',
-		'Ext.layout.container.HBox',
-		'Ext.data.ArrayStore',
-		'Ext.button.Button',
-		'Ext.form.field.Text',
-		'Ext.form.field.Number',
-		'Ext.form.field.Date',
-		'Ext.form.field.ComboBox'
-	],
-	mixins: {
-		observable: 'Ext.util.Observable'
-	},
+    extend: 'Ext.AbstractPlugin',
+    alias: 'plugin.filterbar',
+    uses: [
+        'Ext.window.MessageBox',
+        'Ext.ux.form.field.ClearButton',
+        'Ext.ux.form.field.OperatorButton',
+        'Ext.container.Container',
+        'Ext.util.DelayedTask',
+        'Ext.layout.container.HBox',
+        'Ext.data.ArrayStore',
+        'Ext.button.Button',
+        'Ext.form.field.Text',
+        'Ext.form.field.Number',
+        'Ext.form.field.Date',
+        'Ext.form.field.ComboBox'
+    ],
+    mixins: {
+        observable: 'Ext.util.Observable'
+    },
 
-	updateBuffer				: 800,					// buffer time to apply filtering when typing/selecting
+    updateBuffer				: 800,					// buffer time to apply filtering when typing/selecting
 
-	columnFilteredCls			: Ext.baseCSSPrefix + 'column-filtered', // CSS class to apply to the filtered column header
+    columnFilteredCls			: Ext.baseCSSPrefix + 'column-filtered', // CSS class to apply to the filtered column header
 
-	renderHidden				: true,					// renders the filters hidden by default, use in combination with showShowHideButton
-	showShowHideButton			: true,					// add show/hide button in actioncolumn header if found, if not a new small column is created
-	showHideButtonTooltipDo		: 'Show filter bar',	// button tooltip show
-	showHideButtonTooltipUndo	: 'Hide filter bar',	// button tooltip hide
-	showHideButtonIconCls		: 'filter',				// button iconCls
+    renderHidden				: true,					// renders the filters hidden by default, use in combination with showShowHideButton
+    showShowHideButton			: true,					// add show/hide button in actioncolumn header if found, if not a new small column is created
+    showHideButtonTooltipDo		: 'Show filter bar',	// button tooltip show
+    showHideButtonTooltipUndo	: 'Hide filter bar',	// button tooltip hide
+    showHideButtonIconCls		: 'filter',				// button iconCls
 
-	showClearButton				: true,					// use Ext.ux.form.field.ClearButton to allow user to clear each filter, the same as showShowHideButton
-	showClearAllButton			: true,					// add clearAll button in actioncolumn header if found, if not a new small column is created
-	clearAllButtonIconCls		: 'clear-filters', 		// css class with the icon of the clear all button
-	clearAllButtonTooltip		: 'Clear all filters',	// button tooltip
+    showClearButton				: true,					// use Ext.ux.form.field.ClearButton to allow user to clear each filter, the same as showShowHideButton
+    showClearAllButton			: true,					// add clearAll button in actioncolumn header if found, if not a new small column is created
+    clearAllButtonIconCls		: 'clear-filters', 		// css class with the icon of the clear all button
+    clearAllButtonTooltip		: 'Clear all filters',	// button tooltip
 
-	autoStoresRemoteProperty	: 'autoStores',			// if no store is configured for a combo filter then stores are created automatically, if remoteFilter is true then use this property to return arrayStores from the server
-	autoStoresNullValue			: '###NULL###',			// value send to the server to expecify null filter
-	autoStoresNullText			: '[empty]',			// NULL Display Text
-	autoUpdateAutoStores		: false,				// if set to true combo autoStores are updated each time that a filter is applied
+    autoStoresRemoteProperty	: 'autoStores',			// if no store is configured for a combo filter then stores are created automatically, if remoteFilter is true then use this property to return arrayStores from the server
+    autoStoresNullValue			: '###NULL###',			// value send to the server to expecify null filter
+    autoStoresNullText			: '[empty]',			// NULL Display Text
+    autoUpdateAutoStores		: false,				// if set to true combo autoStores are updated each time that a filter is applied
 
-	enableOperators				: true,					// enable operator selection for number and date filters
+    enableOperators				: true,					// enable operator selection for number and date filters
 
-	boolTpl: {
-		xtype: 'combo',
-		queryMode: 'local',
-		forceSelection: true,
-		triggerAction: 'all',
-		editable: false,
-		store: [
-                    [1, 'Yes'],
-                    [0, 'No']
-		],
-		operator: 'eq'
-	},
-	dateTpl: {
-		xtype: 'datefield',
-		editable: true,
-		submitFormat: 'Y-m-d',
-		operator: 'eq'
-	},
-	floatTpl: {
-		xtype: 'numberfield',
-		allowDecimals: true,
-		minValue: 0,
-		hideTrigger: true,
-                keyNavEnabled: false,
-                mouseWheelEnabled: false,
-                operator: 'eq'
-	},
-	intTpl: {
-		xtype: 'numberfield',
-		allowDecimals: false,
-		minValue: 0,
-		operator: 'eq'
-	},
-	stringTpl: {
-		xtype: 'textfield',
-		operator: 'like'
-	},
-	comboTpl: {
-		xtype: 'combo',
-		queryMode: 'local',
-		forceSelection: true,
-		editable: false,
-		triggerAction: 'all',
-		operator: 'eq'
-	},
-	listTpl: {
-		xtype: 'combo',
-		queryMode: 'local',
-		forceSelection: true,
-		editable: false,
-		triggerAction: 'all',
-		multiSelect: true,
-		operator: 'in'
-	},
-	disabledTpl: {
+    boolTpl: {
+        xtype: 'combo',
+        queryMode: 'local',
+        forceSelection: true,
+        triggerAction: 'all',
+        editable: false,
+        store: [
+            [1, 'Yes'],
+            [0, 'No']
+        ],
+        operator: 'eq'
+    },
+    dateTpl: {
+        xtype: 'datefield',
+        editable: true,
+        submitFormat: 'Y-m-d',
+        operator: 'eq'
+    },
+    floatTpl: {
+        xtype: 'numberfield',
+        allowDecimals: true,
+        minValue: 0,
+        hideTrigger: true,
+        keyNavEnabled: false,
+        mouseWheelEnabled: false,
+        operator: 'eq'
+    },
+    intTpl: {
+        xtype: 'numberfield',
+        allowDecimals: false,
+        minValue: 0,
+        operator: 'eq'
+    },
+    stringTpl: {
+        xtype: 'textfield',
+        operator: 'like'
+    },
+    comboTpl: {
+        xtype: 'combo',
+        queryMode: 'local',
+        forceSelection: true,
+        editable: false,
+        triggerAction: 'all',
+        operator: 'eq'
+    },
+    listTpl: {
+        xtype: 'combo',
+        queryMode: 'local',
+        forceSelection: true,
+        editable: false,
+        triggerAction: 'all',
+        multiSelect: true,
+        operator: 'in'
+    },
+    disabledTpl: {
         xtype: 'textfield',
         disabled: true
     },
 
-	constructor: function() {
-		var me = this;
+    constructor: function() {
+        var me = this;
 
-		me.boolTpl.store[0][1] = Ext.MessageBox.buttonText.yes;
-		me.boolTpl.store[1][1] = Ext.MessageBox.buttonText.no;
+        me.boolTpl.store[0][1] = Ext.MessageBox.buttonText.yes;
+        me.boolTpl.store[1][1] = Ext.MessageBox.buttonText.no;
 
-		me.mixins.observable.constructor.call(me);
-		me.callParent(arguments);
-	},
+        me.mixins.observable.constructor.call(me);
+        me.callParent(arguments);
+    },
 
-	// private
-	init: function(grid) {
-		var me = this;
+    // private
+    init: function(grid) {
+        var me = this;
 
-		grid.on({
-			columnresize: me.resizeContainer,
-			columnhide: me.resizeContainer,
-			columnshow: me.resizeContainer,
-			beforedestroy: me.unsetup,
-			reconfigure: me.resetup,
-			columnmove: me.columnmove,
-			scope: me
-		});
+        grid.on({
+            columnresize: me.resizeContainer,
+            columnhide: me.resizeContainer,
+            columnshow: me.resizeContainer,
+            beforedestroy: me.unsetup,
+            reconfigure: me.resetup,
+            columnmove: me.columnmove,
+            scope: me
+        });
 
-		grid.addEvents('filterupdated');
+        grid.addEvents('filterupdated');
 
-                Ext.apply(grid, {
-                    
-                    filterBar: me,
-                    getFilterBar: function() {
-	        	return this.filterBar;
-                    }
-		});
+        Ext.apply(grid, {
 
-		me.setup(grid);
-	},
+            filterBar: me,
+            getFilterBar: function() {
+                return this.filterBar;
+            }
+        });
 
-	// private
-	setup: function(grid) {
-		var me = this;
+        me.setup(grid);
+    },
 
-		me.grid = grid;
-		me.visible = !me.renderHidden;
-		me.autoStores = Ext.create('Ext.util.MixedCollection');
-		me.autoStoresLoaded = false;
-		me.columns = Ext.create('Ext.util.MixedCollection');
-		/*
+    // private
+    setup: function(grid) {
+        var me = this;
+
+        me.grid = grid;
+        me.visible = !me.renderHidden;
+        me.autoStores = Ext.create('Ext.util.MixedCollection');
+        me.autoStoresLoaded = false;
+        me.columns = Ext.create('Ext.util.MixedCollection');
+        /*
          * Commented to set a bar of filters
-        me.containers = Ext.create('Ext.util.MixedCollection');
-        */
-       /*
-        * Added to get filter bar in a row
-        */
+         me.containers = Ext.create('Ext.util.MixedCollection');
+         */
+        /*
+         * Added to get filter bar in a row
+         */
         grid.addDocked(
             me.filterBar = Ext.create('Ext.container.Container', {  // adds a filter bar to grid 
                 id: grid.id + '-filter-bar',
@@ -232,765 +234,765 @@ Ext.define('Ext.ux.grid.FilterBar', {
                 }
             })
         );
-                
-		me.fields = Ext.create('Ext.util.MixedCollection');
-		me.actionColumn = me.grid.down('actioncolumn') || me.grid.down('actioncolumnpro');
-		me.extraColumn = null;
-		me.clearAllEl = null;
-		me.showHideEl = null;
-		me.task = Ext.create('Ext.util.DelayedTask');
-		me.filterArray = [];
 
-		me.overrideProxy();
-		me.parseFiltersConfig(); 	// sets me.columns and me.autoStores
-		me.parseInitialFilters();   // sets me.filterArray with the store previous filters if any (adds operator and type if missing)
-		me.renderExtraColumn(); 	// sets me.extraColumn if applicable
+        me.fields = Ext.create('Ext.util.MixedCollection');
+        me.actionColumn = me.grid.down('actioncolumn') || me.grid.down('actioncolumnpro');
+        me.extraColumn = null;
+        me.clearAllEl = null;
+        me.showHideEl = null;
+        me.task = Ext.create('Ext.util.DelayedTask');
+        me.filterArray = [];
 
-		// renders the filter's bar
-		if (grid.rendered) {
-			me.renderFilterBar(grid);
-                        
-		} else {
-			//grid.on('afterrender', me.renderFilterBar, me, { single: true });
-                        grid.on('viewready', me.renderFilterBar, me, { single: true });
-		}
-	},
+        me.overrideProxy();
+        me.parseFiltersConfig(); 	// sets me.columns and me.autoStores
+        me.parseInitialFilters();   // sets me.filterArray with the store previous filters if any (adds operator and type if missing)
+        me.renderExtraColumn(); 	// sets me.extraColumn if applicable
 
-	// private
-	unsetup: function(grid) {
-		var me = this;
+        // renders the filter's bar
+        if (grid.rendered) {
+            me.renderFilterBar(grid);
 
-		if (me.autoStores.getCount()) {
-			me.grid.store.un('load', me.fillAutoStores, me);
-		}
+        } else {
+            //grid.on('afterrender', me.renderFilterBar, me, { single: true });
+            grid.on('viewready', me.renderFilterBar, me, { single: true });
+        }
+    },
 
-		me.autoStores.each(function(item) {
-			Ext.destroy(item);
-		});
-		me.autoStores.clear();
-		me.autoStores = null;
-		me.columns.each(function(column) {
-			if (column.rendered) {
-				if(column.getEl().hasCls(me.columnFilteredCls)) {
-					column.getEl().removeCls(me.columnFilteredCls);
-				}
-			}
-		}, me);
-		me.columns.clear();
-		me.columns = null;
-		me.fields.each(function(item) {
-			Ext.destroy(item);
-		});
-		me.fields.clear();
-		me.fields = null;
-		
-                /*
-                 * Commented
-                 * 
-                me.containers.each(function(item) {
-			Ext.destroy(item);
-		});
-		me.containers.clear();
-		me.containers = null;
-                */
-               
-                // Filter bar added        
-                me.filterBar.removeAll();
-                me.filterBar = null;
-               
-		if (me.clearAllEl) {
-			Ext.destroy(me.clearAllEl);
-			me.clearAllEl = null;
-		}
-		if (me.showHideEl) {
-			Ext.destroy(me.showHideEl);
-			me.showHideEl = null;
-		}
-		if (me.extraColumn) {
-			me.grid.headerCt.items.remove(me.extraColumn);
-			Ext.destroy(me.extraColumn);
-			me.extraColumn = null;
-		}
-		me.task = null;
-		me.filterArray = null;
-	},
+    // private
+    unsetup: function(grid) {
+        var me = this;
 
-	// private
-	resetup: function(grid) {
-		var me = this;
+        if (me.autoStores.getCount()) {
+            me.grid.store.un('load', me.fillAutoStores, me);
+        }
 
-		me.unsetup(grid);
-		me.setup(grid);
-	},
+        me.autoStores.each(function(item) {
+            Ext.destroy(item);
+        });
+        me.autoStores.clear();
+        me.autoStores = null;
+        me.columns.each(function(column) {
+            if (column.rendered) {
+                if(column.getEl().hasCls(me.columnFilteredCls)) {
+                    column.getEl().removeCls(me.columnFilteredCls);
+                }
+            }
+        }, me);
+        me.columns.clear();
+        me.columns = null;
+        me.fields.each(function(item) {
+            Ext.destroy(item);
+        });
+        me.fields.clear();
+        me.fields = null;
 
-	// private
-	overrideProxy: function() {
-		var me = this;
+        /*
+         * Commented
+         *
+         me.containers.each(function(item) {
+         Ext.destroy(item);
+         });
+         me.containers.clear();
+         me.containers = null;
+         */
 
-		// override encodeFilters to append type and operator in remote filtering
-		Ext.apply(me.grid.store.proxy, {
-			encodeFilters: function(filters) {
-				var min = [],
-					length = filters.length,
-					i = 0;
+        // Filter bar added
+        me.filterBar.removeAll();
+        me.filterBar = null;
 
-				for (; i < length; i++) {
-					min[i] = {
-						property: filters[i].property,
-						value   : filters[i].value
-					};
-					if (filters[i].type) {
-						min[i].type = filters[i].type;
-					}
-					if (filters[i].operator) {
-						min[i].operator = filters[i].operator;
-					}
-				}
-				return this.applyEncoding(min);
-			}
-		});
-	},
+        if (me.clearAllEl) {
+            Ext.destroy(me.clearAllEl);
+            me.clearAllEl = null;
+        }
+        if (me.showHideEl) {
+            Ext.destroy(me.showHideEl);
+            me.showHideEl = null;
+        }
+        if (me.extraColumn) {
+            me.grid.headerCt.items.remove(me.extraColumn);
+            Ext.destroy(me.extraColumn);
+            me.extraColumn = null;
+        }
+        me.task = null;
+        me.filterArray = null;
+    },
 
-	// private
-	parseFiltersConfig: function() {
-		var me = this;
-                // -- var columns = this.grid.headerCt.getGridColumns();
-                // ++ var columns = this.getGridColumns();
-		var columns = this.getGridColumns();
-		me.columns.clear();
-		me.autoStores.clear();
-		Ext.each(columns, function(column) {
-			if (column.filter) {
-				if (column.filter === true || column.filter === 'auto') { // automatic types configuration (store based)
-					var type = me.grid.store.model.prototype.fields.get(column.dataIndex).type.type;
-					if (type == 'auto') type = 'string';
-					column.filter = type;
-				}
-				if (Ext.isString(column.filter)) {
-					column.filter = {
-						type: column.filter // only set type to then use templates
-					};
-				}
-				if (column.filter.type) {
-					column.filter = Ext.applyIf(column.filter, me[column.filter.type + 'Tpl']); // also use templates but with user configuration
-				}
+    // private
+    resetup: function(grid) {
+        var me = this;
 
-				if (column.filter.xtype == 'combo' && !column.filter.store) {
-					column.autoStore = true;
-					column.filter.store = Ext.create('Ext.data.ArrayStore', {
-						fields: [{
-							name: 'text'
-						},{
-							name: 'id'
-						}]
-					});
-					me.autoStores.add(column.dataIndex, column.filter.store);
-					column.filter = Ext.apply(column.filter, {
-						displayField: 'text',
-						valueField: 'id'
-					});
-				}
+        me.unsetup(grid);
+        me.setup(grid);
+    },
 
-				if (!column.filter.type) {
-					switch(column.filter.xtype) {
-						case 'combo':
-							column.filter.type = (column.filter.multiSelect ? 'list' : 'combo');
-							break;
-						case 'datefield':
-							column.filter.type = 'date';
-							break;
-						case 'numberfield':
-							column.filter.type = (column.filter.allowDecimals ? 'float' : 'int');
-							break;
-						default:
-							column.filter.type = 'string'
-					}
-				}
+    // private
+    overrideProxy: function() {
+        var me = this;
 
-				if (!column.filter.operator) {
-					column.filter.operator = me[column.filter.type + 'Tpl'].operator;
-				}
-				me.columns.add(column.dataIndex, column);
-			}
-		}, me);
-		if (me.autoStores.getCount()) {
-			if (me.grid.store.getCount() > 0) {
-				me.fillAutoStores(me.grid.store);
-			}
-			if (me.grid.store.remoteFilter) {
-				var autoStores = [];
-				me.autoStores.eachKey(function(key, item) {
-					autoStores.push(key);
-				});
-				me.grid.store.proxy.extraParams = me.grid.store.proxy.extraParams || {};
-				me.grid.store.proxy.extraParams[me.autoStoresRemoteProperty] = autoStores;
-			}
-			me.grid.store.on('load', me.fillAutoStores, me);
-		}
-	},
+        // override encodeFilters to append type and operator in remote filtering
+        Ext.apply(me.grid.store.proxy, {
+            encodeFilters: function(filters) {
+                var min = [],
+                    length = filters.length,
+                    i = 0;
 
-	// private
-	fillAutoStores: function(store) {
-		var me = this;
-		if (!me.autoUpdateAutoStores && me.autoStoresLoaded) return;
+                for (; i < length; i++) {
+                    min[i] = {
+                        property: filters[i].property,
+                        value   : filters[i].value
+                    };
+                    if (filters[i].type) {
+                        min[i].type = filters[i].type;
+                    }
+                    if (filters[i].operator) {
+                        min[i].operator = filters[i].operator;
+                    }
+                }
+                return this.applyEncoding(min);
+            }
+        });
+    },
 
-		me.autoStores.eachKey(function(key, item) {
-			var field = me.fields.get(key);
-			if (field) {
-				field.suspendEvents();
-				var fieldValue = field.getValue();
-			}
-			if (!store.remoteFilter) { // values from local store
-				var data = store.collect(key, true, false).sort();
-				var records = [];
-				Ext.each(data, function(txt) {
-					if (Ext.isEmpty(txt)) {
-						Ext.Array.insert(records, 0, [{
-							text: me.autoStoresNullText,
-							id: me.autoStoresNullValue
-						}]);
-					} else {
-						records.push({
-							text: txt,
-							id: txt
-						});
-					}
-				});
-				item.loadData(records);
-			} else { // values from server
-				if (store.proxy.reader.rawData[me.autoStoresRemoteProperty]) {
-					var data = store.proxy.reader.rawData[me.autoStoresRemoteProperty];
-					if (data[key]) {
-						var records = [];
-						Ext.each(data[key].sort(), function(txt) {
-							if (Ext.isEmpty(txt)) {
-								Ext.Array.insert(records, 0, [{
-									text: me.autoStoresNullText,
-									id: me.autoStoresNullValue
-								}]);
-							} else {
-								records.push({
-									text: txt,
-									id: txt
-								});
-							}
-						});
-						item.loadData(records);
-					}
-				}
-			}
-			if (field) {
-				field.setValue(fieldValue);
-				field.resumeEvents();
-			}
-		}, me);
-		me.autoStoresLoaded = true;
-		if (me.grid.store.remoteFilter && !me.autoUpdateAutoStores) {
-			delete me.grid.store.proxy.extraParams[me.autoStoresRemoteProperty];
-		}
-	},
+    // private
+    parseFiltersConfig: function() {
+        var me = this;
+        // -- var columns = this.grid.headerCt.getGridColumns();
+        // ++ var columns = this.getGridColumns();
+        var columns = this.getGridColumns();
+        me.columns.clear();
+        me.autoStores.clear();
+        Ext.each(columns, function(column) {
+            if (column.filter) {
+                if (column.filter === true || column.filter === 'auto') { // automatic types configuration (store based)
+                    var type = me.grid.store.model.prototype.fields.get(column.dataIndex).type.type;
+                    if (type == 'auto') type = 'string';
+                    column.filter = type;
+                }
+                if (Ext.isString(column.filter)) {
+                    column.filter = {
+                        type: column.filter // only set type to then use templates
+                    };
+                }
+                if (column.filter.type) {
+                    column.filter = Ext.applyIf(column.filter, me[column.filter.type + 'Tpl']); // also use templates but with user configuration
+                }
 
-	// private
-	parseInitialFilters: function() {
-		var me = this;
+                if (column.filter.xtype == 'combo' && !column.filter.store) {
+                    column.autoStore = true;
+                    column.filter.store = Ext.create('Ext.data.ArrayStore', {
+                        fields: [{
+                            name: 'text'
+                        },{
+                            name: 'id'
+                        }]
+                    });
+                    me.autoStores.add(column.dataIndex, column.filter.store);
+                    column.filter = Ext.apply(column.filter, {
+                        displayField: 'text',
+                        valueField: 'id'
+                    });
+                }
 
-		me.filterArray = [];
-		me.grid.store.filters.each(function(filter) {
-			// try to parse initial filters, for now filterFn is unsuported
-			if (filter.property && !Ext.isEmpty(filter.value) && me.columns.get(filter.property)) {
-				if (!filter.type) filter.type = me.columns.get(filter.property).filter.type;
-				if (!filter.operator) filter.operator = me.columns.get(filter.property).filter.operator;
-				me.filterArray.push(filter);
-			}
-		}, me);
-	},
+                if (!column.filter.type) {
+                    switch(column.filter.xtype) {
+                        case 'combo':
+                            column.filter.type = (column.filter.multiSelect ? 'list' : 'combo');
+                            break;
+                        case 'datefield':
+                            column.filter.type = 'date';
+                            break;
+                        case 'numberfield':
+                            column.filter.type = (column.filter.allowDecimals ? 'float' : 'int');
+                            break;
+                        default:
+                            column.filter.type = 'string'
+                    }
+                }
 
-	// private
-	renderExtraColumn: function() {
-		var me = this;
+                if (!column.filter.operator) {
+                    column.filter.operator = me[column.filter.type + 'Tpl'].operator;
+                }
+                me.columns.add(column.dataIndex, column);
+            }
+        }, me);
+        if (me.autoStores.getCount()) {
+            if (me.grid.store.getCount() > 0) {
+                me.fillAutoStores(me.grid.store);
+            }
+            if (me.grid.store.remoteFilter) {
+                var autoStores = [];
+                me.autoStores.eachKey(function(key, item) {
+                    autoStores.push(key);
+                });
+                me.grid.store.proxy.extraParams = me.grid.store.proxy.extraParams || {};
+                me.grid.store.proxy.extraParams[me.autoStoresRemoteProperty] = autoStores;
+            }
+            me.grid.store.on('load', me.fillAutoStores, me);
+        }
+    },
 
-		if (me.columns.getCount() && !me.actionColumn && (me.showClearAllButton || me.showShowHideButton)) {
-			var extraColumnCssClass = Ext.baseCSSPrefix + 'filter-bar-extra-column-hack';
-			if (!document.getElementById(extraColumnCssClass)) {
-				var style = document.createElement('style');
-				var css = 'tr.' + Ext.baseCSSPrefix + 'grid-row td.' + extraColumnCssClass + ' { background-color: #ffffff !important; border-color: #ffffff !important; }';
-				style.setAttribute('type', 'text/css');
-				style.setAttribute('id', extraColumnCssClass);
-				document.body.appendChild(style);
-				if (style.styleSheet) {   	// IE
-					style.styleSheet.cssText = css;
-				} else {                	// others
-					var cssNode = document.createTextNode(css);
-					style.appendChild(cssNode);
-				}
-			}
-			me.extraColumn = Ext.create('Ext.grid.column.Column', {
-				draggable: false,
-				hideable: false,
-				menuDisabled: true,
-				sortable: false,
-				resizable: false,
-				fixed: true,
-				width: 48,
-				minWidth: 28,
-				maxWidth: 48,
-				header: '&nbsp;',
-				tdCls: extraColumnCssClass
-			});
-			me.grid.headerCt.add(me.extraColumn);
-		}
-	},
+    // private
+    fillAutoStores: function(store) {
+        var me = this;
+        if (!me.autoUpdateAutoStores && me.autoStoresLoaded) return;
 
-	// private
-	renderFilterBar: function(grid) {
-		var me = this;
-                /*
-		me.containers.clear();
-                */
-                /*
-                 * Added to filter bar row
-                 */
-                me.filterBar.removeAll();
-                
-		me.fields.clear();
-		me.columns.eachKey(function(key, column) {
-			var listConfig = column.filter.listConfig || {};
-			listConfig = Ext.apply(listConfig, {
-				style: 'border-top-width: 1px'
-			});
-			var plugins = [];
-			if (me.showClearButton) {
-				plugins.push({
-					ptype: 'clearbutton'
-				});
-			}
-			if (me.enableOperators && (column.filter.type == 'date' || column.filter.type == 'int' || column.filter.type == 'float')) {
-				plugins.push({
-					ptype: 'operatorbutton',
-					listeners: {
-						operatorchanged: function(txt) {
-							if (Ext.isEmpty(txt.getValue())) return;
-							me.applyInstantFilters(txt);
-						}
-					}
-				});
-			}
-			var field = Ext.widget(column.filter.xtype, Ext.apply(column.filter, {
-				dataIndex: key,
-				flex: 1,
-				margin: 0,
-				fieldStyle: 'border-left-width: 0px; border-bottom-width: 0px;',
-				listConfig: listConfig,
-				preventMark: true,
-				msgTarget: 'none',
-				checkChangeBuffer: 50,
-				enableKeyEvents: true,
-				listeners: {
-					change: me.applyDelayedFilters,
-					select: me.applyInstantFilters,
-					keypress: function(txt, e) {
-						if(e.getCharCode() == 13) {
-							e.stopEvent();
-							me.applyInstantFilters(txt);
-						}
-						return false;
-					},
-					scope: me
-				},
-				plugins: plugins
-			}));
-			me.fields.add(column.dataIndex, field);
-			//var container = Ext.create('Ext.container.Container', {
-                        
-                        /*
-                         * Added for filter bar row
-                         */
-                        var container = Ext.create('Ext.container.Container', {                
-                                id: grid.id + '-filter-container-' + column.dataIndex,
-                                baseCls: Ext.baseCSSPrefix + 'column-header',
-				dataIndex: key,
-				layout: 'hbox',
-				bodyStyle: 'background-color: "transparent";',
-                                width: column.getWidth(),
-				items: [field],
-				listeners: {
-					scope: me,
-					element: 'el',
-					mousedown: function(e) { e.stopPropagation(); },
-					click: function(e) { e.stopPropagation(); },
-					dblclick: function(e) { e.stopPropagation(); },
-					keydown: function(e) { e.stopPropagation(); },
-					keypress: function(e) { e.stopPropagation(); },
-					keyup: function(e) { e.stopPropagation(); }
-				}
-			});
-                        /*
-			me.containers.add(column.dataIndex, container);
-			container.render(Ext.get(column.id));
-                        */
-                       /*
-                        * Added to filter bar row
-                        */
-                        me.filterBar.add(container);    // adds the container to filterBar
+        me.autoStores.eachKey(function(key, item) {
+            var field = me.fields.get(key);
+            if (field) {
+                field.suspendEvents();
+                var fieldValue = field.getValue();
+            }
+            if (!store.remoteFilter) { // values from local store
+                var data = store.collect(key, true, false).sort();
+                var records = [];
+                Ext.each(data, function(txt) {
+                    if (Ext.isEmpty(txt)) {
+                        Ext.Array.insert(records, 0, [{
+                            text: me.autoStoresNullText,
+                            id: me.autoStoresNullValue
+                        }]);
+                    } else {
+                        records.push({
+                            text: txt,
+                            id: txt
+                        });
+                    }
+                });
+                item.loadData(records);
+            } else { // values from server
+                if (store.proxy.reader.rawData[me.autoStoresRemoteProperty]) {
+                    var data = store.proxy.reader.rawData[me.autoStoresRemoteProperty];
+                    if (data[key]) {
+                        var records = [];
+                        Ext.each(data[key].sort(), function(txt) {
+                            if (Ext.isEmpty(txt)) {
+                                Ext.Array.insert(records, 0, [{
+                                    text: me.autoStoresNullText,
+                                    id: me.autoStoresNullValue
+                                }]);
+                            } else {
+                                records.push({
+                                    text: txt,
+                                    id: txt
+                                });
+                            }
+                        });
+                        item.loadData(records);
+                    }
+                }
+            }
+            if (field) {
+                field.setValue(fieldValue);
+                field.resumeEvents();
+            }
+        }, me);
+        me.autoStoresLoaded = true;
+        if (me.grid.store.remoteFilter && !me.autoUpdateAutoStores) {
+            delete me.grid.store.proxy.extraParams[me.autoStoresRemoteProperty];
+        }
+    },
+
+    // private
+    parseInitialFilters: function() {
+        var me = this;
+
+        me.filterArray = [];
+        me.grid.store.filters.each(function(filter) {
+            // try to parse initial filters, for now filterFn is unsuported
+            if (filter.property && !Ext.isEmpty(filter.value) && me.columns.get(filter.property)) {
+                if (!filter.type) filter.type = me.columns.get(filter.property).filter.type;
+                if (!filter.operator) filter.operator = me.columns.get(filter.property).filter.operator;
+                me.filterArray.push(filter);
+            }
+        }, me);
+    },
+
+    // private
+    renderExtraColumn: function() {
+        var me = this;
+
+        if (me.columns.getCount() && !me.actionColumn && (me.showClearAllButton || me.showShowHideButton)) {
+            var extraColumnCssClass = Ext.baseCSSPrefix + 'filter-bar-extra-column-hack';
+            if (!document.getElementById(extraColumnCssClass)) {
+                var style = document.createElement('style');
+                var css = 'tr.' + Ext.baseCSSPrefix + 'grid-row td.' + extraColumnCssClass + ' { background-color: #ffffff !important; border-color: #ffffff !important; }';
+                style.setAttribute('type', 'text/css');
+                style.setAttribute('id', extraColumnCssClass);
+                document.body.appendChild(style);
+                if (style.styleSheet) {   	// IE
+                    style.styleSheet.cssText = css;
+                } else {                	// others
+                    var cssNode = document.createTextNode(css);
+                    style.appendChild(cssNode);
+                }
+            }
+            me.extraColumn = Ext.create('Ext.grid.column.Column', {
+                draggable: false,
+                hideable: false,
+                menuDisabled: true,
+                sortable: false,
+                resizable: false,
+                fixed: true,
+                width: 48,
+                minWidth: 28,
+                maxWidth: 48,
+                header: '&nbsp;',
+                tdCls: extraColumnCssClass
+            });
+            me.grid.headerCt.add(me.extraColumn);
+        }
+    },
+
+    // private
+    renderFilterBar: function(grid) {
+        var me = this;
+        /*
+         me.containers.clear();
+         */
+        /*
+         * Added to filter bar row
+         */
+        me.filterBar.removeAll();
+
+        me.fields.clear();
+        me.columns.eachKey(function(key, column) {
+            var listConfig = column.filter.listConfig || {};
+            listConfig = Ext.apply(listConfig, {
+                style: 'border-top-width: 1px'
+            });
+            var plugins = [];
+            if (me.showClearButton) {
+                plugins.push({
+                    ptype: 'clearbutton'
+                });
+            }
+            if (me.enableOperators && (column.filter.type == 'date' || column.filter.type == 'int' || column.filter.type == 'float')) {
+                plugins.push({
+                    ptype: 'operatorbutton',
+                    listeners: {
+                        operatorchanged: function(txt) {
+                            if (Ext.isEmpty(txt.getValue())) return;
+                            me.applyInstantFilters(txt);
+                        }
+                    }
+                });
+            }
+            var field = Ext.widget(column.filter.xtype, Ext.apply(column.filter, {
+                dataIndex: key,
+                flex: 1,
+                margin: 0,
+                fieldStyle: 'border-left-width: 0px; border-bottom-width: 0px;',
+                listConfig: listConfig,
+                preventMark: true,
+                msgTarget: 'none',
+                checkChangeBuffer: 50,
+                enableKeyEvents: true,
+                listeners: {
+                    change: me.applyDelayedFilters,
+                    select: me.applyInstantFilters,
+                    keypress: function(txt, e) {
+                        if(e.getCharCode() == 13) {
+                            e.stopEvent();
+                            me.applyInstantFilters(txt);
+                        }
+                        return false;
+                    },
+                    scope: me
+                },
+                plugins: plugins
+            }));
+            me.fields.add(column.dataIndex, field);
+            //var container = Ext.create('Ext.container.Container', {
+
+            /*
+             * Added for filter bar row
+             */
+            var container = Ext.create('Ext.container.Container', {
+                id: grid.id + '-filter-container-' + column.dataIndex,
+                baseCls: Ext.baseCSSPrefix + 'column-header',
+                dataIndex: key,
+                layout: 'hbox',
+                bodyStyle: 'background-color: "transparent";',
+                width: column.getWidth(),
+                items: [field],
+                listeners: {
+                    scope: me,
+                    element: 'el',
+                    mousedown: function(e) { e.stopPropagation(); },
+                    click: function(e) { e.stopPropagation(); },
+                    dblclick: function(e) { e.stopPropagation(); },
+                    keydown: function(e) { e.stopPropagation(); },
+                    keypress: function(e) { e.stopPropagation(); },
+                    keyup: function(e) { e.stopPropagation(); }
+                }
+            });
+            /*
+             me.containers.add(column.dataIndex, container);
+             container.render(Ext.get(column.id));
+             */
+            /*
+             * Added to filter bar row
+             */
+            me.filterBar.add(container);    // adds the container to filterBar
 
         }, me);
-		var excludedCols = [];
-		if (me.actionColumn) excludedCols.push(me.actionColumn.id);
-		if (me.extraColumn) excludedCols.push(me.extraColumn.id);
-                // -- Ext.each(me.grid.headerCt.getGridColumns(), function(column) {
-                // ++ Ext.each(me.getGridColumns(), function(column) {
-		Ext.each(me.getGridColumns(), function(column) {
-                    if (!Ext.Array.contains(excludedCols, column.id)) {
-                        //column.setPadding = Ext.Function.createInterceptor(column.setPadding, function(h) {
-                            if (column.hasCls(Ext.baseCSSPrefix + 'column-header-checkbox')) { //checkbox column
-                                /*
-                                 * Deactivated
-                                this.titleEl.setStyle({
-                                    paddingTop: '4px',
-                                });
-                                */
-                                me.filterBar.getEl().toggleCls('ext-ux-checkbox-column');
-                            }
-                            return false;
-                        //});
-                    }
-		});
+        var excludedCols = [];
+        if (me.actionColumn) excludedCols.push(me.actionColumn.id);
+        if (me.extraColumn) excludedCols.push(me.extraColumn.id);
+        // -- Ext.each(me.grid.headerCt.getGridColumns(), function(column) {
+        // ++ Ext.each(me.getGridColumns(), function(column) {
+        Ext.each(me.getGridColumns(), function(column) {
+            if (!Ext.Array.contains(excludedCols, column.id)) {
+                //column.setPadding = Ext.Function.createInterceptor(column.setPadding, function(h) {
+                if (column.hasCls(Ext.baseCSSPrefix + 'column-header-checkbox')) { //checkbox column
+                    /*
+                     * Deactivated
+                     this.titleEl.setStyle({
+                     paddingTop: '4px',
+                     });
+                     */
+                    me.filterBar.getEl().toggleCls('ext-ux-checkbox-column');
+                }
+                return false;
+                //});
+            }
+        });
 
 
-		me.setVisible(me.visible);
+        me.setVisible(me.visible);
 
-		me.renderButtons();
+        me.renderButtons();
 
-		me.showInitialFilters();
-                
-                        grid.addDocked(me.filterBar);
+        me.showInitialFilters();
+
+        grid.addDocked(me.filterBar);
     },
 
     //private
     renderButtons: function() {
-		var me = this;
+        var me = this;
 
-		if (me.showShowHideButton && me.columns.getCount()) {
-			var column = me.actionColumn || me.extraColumn;
-			var buttonEl = column.el.first().first();
-			me.showHideEl = Ext.get(Ext.core.DomHelper.append(buttonEl, {
-				tag: 'div',
-				style: 'position: absolute; width: 16px; height: 16px; top: 3px; cursor: pointer; left: ' + parseInt((column.el.getWidth() - 16) / 2) + 'px',
-				cls: me.showHideButtonIconCls,
-				'data-qtip': (me.renderHidden ? me.showHideButtonTooltipDo : me.showHideButtonTooltipUndo)
-			}));
-			me.showHideEl.on('click', function() {
-				me.setVisible(!me.isVisible());
-				me.showHideEl.set({
-					'data-qtip': (!me.isVisible() ? me.showHideButtonTooltipDo : me.showHideButtonTooltipUndo)
-				});
-			});
-		}
+        if (me.showShowHideButton && me.columns.getCount()) {
+            var column = me.actionColumn || me.extraColumn;
+            var buttonEl = column.el.first().first();
+            me.showHideEl = Ext.get(Ext.core.DomHelper.append(buttonEl, {
+                tag: 'div',
+                style: 'position: absolute; width: 16px; height: 16px; top: 3px; cursor: pointer; left: ' + parseInt((column.el.getWidth() - 16) / 2) + 'px',
+                cls: me.showHideButtonIconCls,
+                'data-qtip': (me.renderHidden ? me.showHideButtonTooltipDo : me.showHideButtonTooltipUndo)
+            }));
+            me.showHideEl.on('click', function() {
+                me.setVisible(!me.isVisible());
+                me.showHideEl.set({
+                    'data-qtip': (!me.isVisible() ? me.showHideButtonTooltipDo : me.showHideButtonTooltipUndo)
+                });
+            });
+        }
 
-		if (me.showClearAllButton && me.columns.getCount()) {
-			var column = me.actionColumn || me.extraColumn;
-			var buttonEl = column.el.first().first();
-			me.clearAllEl = Ext.get(Ext.core.DomHelper.append(buttonEl, {
-				tag: 'div',
-				style: 'position: absolute; width: 16px; height: 16px; top: 25px; cursor: pointer; left: ' + parseInt((column.el.getWidth() - 16) / 2) + 'px',
-				cls: me.clearAllButtonIconCls,
-				'data-qtip': me.clearAllButtonTooltip
-			}));
+        if (me.showClearAllButton && me.columns.getCount()) {
+            var column = me.actionColumn || me.extraColumn;
+            var buttonEl = column.el.first().first();
+            me.clearAllEl = Ext.get(Ext.core.DomHelper.append(buttonEl, {
+                tag: 'div',
+                style: 'position: absolute; width: 16px; height: 16px; top: 25px; cursor: pointer; left: ' + parseInt((column.el.getWidth() - 16) / 2) + 'px',
+                cls: me.clearAllButtonIconCls,
+                'data-qtip': me.clearAllButtonTooltip
+            }));
 
-			me.clearAllEl.hide();
-			me.clearAllEl.on('click', function() {
-				console.log('clear btn');
-				me.clearFilters();
-			});
-		}
+            me.clearAllEl.hide();
+            me.clearAllEl.on('click', function() {
+                console.log('clear btn');
+                me.clearFilters();
+            });
+        }
     },
 
     // private
     showInitialFilters: function() {
-		var me = this;
+        var me = this;
 
-		Ext.each(me.filterArray, function(filter) {
-			var column = me.columns.get(filter.property);
-			var field = me.fields.get(filter.property);
-			if(!column.getEl().hasCls(me.columnFilteredCls)) {
-				column.getEl().addCls(me.columnFilteredCls);
-			}
-			field.suspendEvents();
-			field.setValue(filter.value);
-			field.resumeEvents();
-		});
+        Ext.each(me.filterArray, function(filter) {
+            var column = me.columns.get(filter.property);
+            var field = me.fields.get(filter.property);
+            if(!column.getEl().hasCls(me.columnFilteredCls)) {
+                column.getEl().addCls(me.columnFilteredCls);
+            }
+            field.suspendEvents();
+            field.setValue(filter.value);
+            field.resumeEvents();
+        });
 
-		if (me.filterArray.length && me.showClearAllButton) {
-			me.clearAllEl.show({duration: 1000});
-		}
+        if (me.filterArray.length && me.showClearAllButton) {
+            me.clearAllEl.show({duration: 1000});
+        }
     },
 
-	// private
-	resizeContainer: function(headerCt, col) {
-		var me = this;
-		var dataIndex = col.dataIndex;
+    // private
+    resizeContainer: function(headerCt, col) {
+        var me = this;
+        var dataIndex = col.dataIndex;
 
-		if (!dataIndex) return;
-                //Commented
-		//var item = me.containers.get(dataIndex);
-                /*
-                 * Added to activate the filter bar row
-                 */
-                var item = me.filterBar.getComponent(me.grid.id + '-filter-container-' + dataIndex);
-                
-		if (item && item.rendered) {
-			var itemWidth = item.getWidth();
-			var colWidth = me.columns.get(dataIndex).getWidth();
-			if (itemWidth != colWidth) {
-				item.setWidth(me.columns.get(dataIndex).getWidth());
-				item.doLayout();
-			}
-		}
-	},
+        if (!dataIndex) return;
+        //Commented
+        //var item = me.containers.get(dataIndex);
+        /*
+         * Added to activate the filter bar row
+         */
+        var item = me.filterBar.getComponent(me.grid.id + '-filter-container-' + dataIndex);
 
-	// private
-	applyFilters: function(field) {
-		if (!field.isValid()) return;
-		var me = this,
-			grid = me.grid,
-			column = me.columns.get(field.dataIndex),
-			newVal = (grid.store.remoteFilter ? field.getSubmitValue() : field.getValue());
-
-		if (Ext.isArray(newVal) && newVal.length == 0) {
-			newVal = '';
-		}
-		var myIndex = -1;
-		Ext.each(me.filterArray, function(item2, index, allItems) {
-			if(item2.property === column.dataIndex) {
-				myIndex = index;
-			}
-		});
-		if(myIndex != -1) {
-			me.filterArray.splice(myIndex, 1);
-		}
-		if(!Ext.isEmpty(newVal)) {
-			if (!grid.store.remoteFilter) {
-				var operator = field.operator || column.filter.operator,
-					filterFn;
-				switch(operator) {
-					case 'eq':
-						filterFn = function(item) {
-							if (column.filter.type == 'date') {
-								return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() == Ext.Date.clearTime(newVal, true).getTime();
-							} else {
-								return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) == (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
-							}
-						};
-						break;
-					case 'gte':
-						filterFn = function(item) {
-							if (column.filter.type == 'date') {
-								return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() >= Ext.Date.clearTime(newVal, true).getTime();
-							} else {
-								return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) >= (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
-							}
-						};
-						break;
-					case 'lte':
-						filterFn = function(item) {
-							if (column.filter.type == 'date') {
-								return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() <= Ext.Date.clearTime(newVal, true).getTime();
-							} else {
-								return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) <= (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
-							}
-						};
-						break;
-					case 'ne':
-						filterFn = function(item) {
-							if (column.filter.type == 'date') {
-								return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() != Ext.Date.clearTime(newVal, true).getTime();
-							} else {
-								return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) != (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
-							}
-						};
-						break;
-					case 'like':
-						filterFn = function(item) {
-							var re = new RegExp(newVal, 'i');
-							return re.test(item.get(column.dataIndex));
-						};
-						break;
-					case 'in':
-						filterFn = function(item) {
-							var re = new RegExp('^' + newVal.join('|') + '$', 'i');
-							return re.test((Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)));
-						};
-						break;
-				}
-				me.filterArray.push(Ext.create('Ext.util.Filter', {
-					property: column.dataIndex,
-					filterFn: filterFn,
-					me: me
-				}));
-			} else {
-				me.filterArray.push(Ext.create('Ext.util.Filter', {
-					property: column.dataIndex,
-					value: newVal,
-					type: column.filter.type,
-					operator: (field.operator || column.filter.operator)
-				}));
-			}
-			if(!column.getEl().hasCls(me.columnFilteredCls)) {
-				column.getEl().addCls(me.columnFilteredCls);
-			}
-		} else {
-			if(column.getEl().hasCls(me.columnFilteredCls)) {
-				column.getEl().removeCls(me.columnFilteredCls);
-			}
-		}
-		grid.store.currentPage = 1;
-		if(me.filterArray.length > 0) {
-			if (!grid.store.remoteFilter) grid.store.clearFilter();
-			grid.store.filters.clear();
-			grid.store.filter(me.filterArray);
-			if (me.clearAllEl) {
-				me.clearAllEl.show({duration: 1000});
-			}
-		} else {
-			grid.store.clearFilter();
-			if (me.clearAllEl) {
-				me.clearAllEl.hide({duration: 1000});
-			}
-		}
-		if (!grid.store.remoteFilter && me.autoUpdateAutoStores) {
-			me.fillAutoStores();
-		}
-		me.fireEvent('filterupdated', me.filterArray);
-	},
-
-	// private
-	applyDelayedFilters: function(field) {
-		if (!field.isValid()) return;
-		var me = this;
-
-		me.task.delay(me.updateBuffer, me.applyFilters, me, [field]);
-	},
-
-	// private
-	applyInstantFilters: function(field) {
-		if (!field.isValid()) return;
-		var me = this;
-
-		me.task.delay(0, me.applyFilters, me, [field]);
-	},
-        
-        // private
-        // Workaround from langles
-        // http://www.sencha.com/forum/showthread.php?152923-Ext.ux.grid.FilterBar-plugin&p=1002888&viewfull=1#post1002888
-        getGridColumns : function(refreshCache) {
-            var me = this, gridHeaderContainer = this.grid.headerCt;
-            var result = refreshCache ? null : gridHeaderContainer.gridDataColumns;
-            // Not already got the column cache, so collect the base columns
-            if (!result) {
-                gridHeaderContainer.gridDataColumns = result = [];
-                gridHeaderContainer.cascade(function(c) {
-                    if ((c !== gridHeaderContainer) && !c.isGroupHeader) {
-                        result.push(c);
-                    }
-                });
+        if (item && item.rendered) {
+            var itemWidth = item.getWidth();
+            var colWidth = me.columns.get(dataIndex).getWidth();
+            if (itemWidth != colWidth) {
+                item.setWidth(me.columns.get(dataIndex).getWidth());
+                item.doLayout();
             }
-            return result;
-        },
-        
-	//private
-	getFirstField: function() {
-		var me = this,
-			field = undefined;
-                // -- Ext.each(me.grid.headerCt.getGridColumns(), function(col) {
-                // ++ Ext.each(me.getGridColumns(), function(col) {
-		Ext.each(me.getGridColumns(), function(col) {
-			if (col.filter) {
-				field = me.fields.get(col.dataIndex);
-				return false;
-			}
-		});
+        }
+    },
 
-		return field;
-	},
+    // private
+    applyFilters: function(field) {
+        if (!field.isValid()) return;
+        var me = this,
+            grid = me.grid,
+            column = me.columns.get(field.dataIndex),
+            newVal = (grid.store.remoteFilter ? field.getSubmitValue() : field.getValue());
 
-	//private
-	focusFirstField: function() {
-		var me = this;
+        if (Ext.isArray(newVal) && newVal.length == 0) {
+            newVal = '';
+        }
+        var myIndex = -1;
+        Ext.each(me.filterArray, function(item2, index, allItems) {
+            if(item2.property === column.dataIndex) {
+                myIndex = index;
+            }
+        });
+        if(myIndex != -1) {
+            me.filterArray.splice(myIndex, 1);
+        }
+        if(!Ext.isEmpty(newVal)) {
+            if (!grid.store.remoteFilter) {
+                var operator = field.operator || column.filter.operator,
+                    filterFn;
+                switch(operator) {
+                    case 'eq':
+                        filterFn = function(item) {
+                            if (column.filter.type == 'date') {
+                                return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() == Ext.Date.clearTime(newVal, true).getTime();
+                            } else {
+                                return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) == (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
+                            }
+                        };
+                        break;
+                    case 'gte':
+                        filterFn = function(item) {
+                            if (column.filter.type == 'date') {
+                                return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() >= Ext.Date.clearTime(newVal, true).getTime();
+                            } else {
+                                return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) >= (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
+                            }
+                        };
+                        break;
+                    case 'lte':
+                        filterFn = function(item) {
+                            if (column.filter.type == 'date') {
+                                return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() <= Ext.Date.clearTime(newVal, true).getTime();
+                            } else {
+                                return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) <= (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
+                            }
+                        };
+                        break;
+                    case 'ne':
+                        filterFn = function(item) {
+                            if (column.filter.type == 'date') {
+                                return Ext.Date.clearTime(item.get(column.dataIndex), true).getTime() != Ext.Date.clearTime(newVal, true).getTime();
+                            } else {
+                                return (Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)) != (Ext.isEmpty(newVal) ? me.autoStoresNullValue : newVal);
+                            }
+                        };
+                        break;
+                    case 'like':
+                        filterFn = function(item) {
+                            var re = new RegExp(newVal, 'i');
+                            return re.test(item.get(column.dataIndex));
+                        };
+                        break;
+                    case 'in':
+                        filterFn = function(item) {
+                            var re = new RegExp('^' + newVal.join('|') + '$', 'i');
+                            return re.test((Ext.isEmpty(item.get(column.dataIndex)) ? me.autoStoresNullValue : item.get(column.dataIndex)));
+                        };
+                        break;
+                }
+                me.filterArray.push(Ext.create('Ext.util.Filter', {
+                    property: column.dataIndex,
+                    filterFn: filterFn,
+                    me: me
+                }));
+            } else {
+                me.filterArray.push(Ext.create('Ext.util.Filter', {
+                    property: column.dataIndex,
+                    value: newVal,
+                    type: column.filter.type,
+                    operator: (field.operator || column.filter.operator)
+                }));
+            }
+            if(!column.getEl().hasCls(me.columnFilteredCls)) {
+                column.getEl().addCls(me.columnFilteredCls);
+            }
+        } else {
+            if(column.getEl().hasCls(me.columnFilteredCls)) {
+                column.getEl().removeCls(me.columnFilteredCls);
+            }
+        }
+        grid.store.currentPage = 1;
+        if(me.filterArray.length > 0) {
+            if (!grid.store.remoteFilter) grid.store.clearFilter();
+            grid.store.filters.clear();
+            grid.store.filter(me.filterArray);
+            if (me.clearAllEl) {
+                me.clearAllEl.show({duration: 1000});
+            }
+        } else {
+            grid.store.clearFilter();
+            if (me.clearAllEl) {
+                me.clearAllEl.hide({duration: 1000});
+            }
+        }
+        if (!grid.store.remoteFilter && me.autoUpdateAutoStores) {
+            me.fillAutoStores();
+        }
+        me.fireEvent('filterupdated', me.filterArray);
+    },
 
-		var field = me.getFirstField();
+    // private
+    applyDelayedFilters: function(field) {
+        if (!field.isValid()) return;
+        var me = this;
 
-		if (field) {
-			field.focus(false, 200);
-		}
-	},
+        me.task.delay(me.updateBuffer, me.applyFilters, me, [field]);
+    },
 
-	clearFilters: function() {
-		var me = this;
+    // private
+    applyInstantFilters: function(field) {
+        if (!field.isValid()) return;
+        var me = this;
 
-		if (me.filterArray.length == 0) return;
-		me.filterArray = [];
-		me.fields.eachKey(function(key, field) {
-			field.suspendEvents();
-			field.reset();
-			field.resumeEvents();
-			var column = me.columns.get(key);
-			if(column.getEl().hasCls(Ext.baseCSSPrefix + 'column-filtered')) {
-				column.getEl().removeCls(Ext.baseCSSPrefix + 'column-filtered');
-			}
-		}, me);
-		me.grid.store.clearFilter();
-		if (me.clearAllEl) {
-			me.clearAllEl.hide({duration: 1000});
-		}
+        me.task.delay(0, me.applyFilters, me, [field]);
+    },
 
-		me.fireEvent('filterupdated', me.filterArray);
-	},
+    // private
+    // Workaround from langles
+    // http://www.sencha.com/forum/showthread.php?152923-Ext.ux.grid.FilterBar-plugin&p=1002888&viewfull=1#post1002888
+    getGridColumns : function(refreshCache) {
+        var me = this, gridHeaderContainer = this.grid.headerCt;
+        var result = refreshCache ? null : gridHeaderContainer.gridDataColumns;
+        // Not already got the column cache, so collect the base columns
+        if (!result) {
+            gridHeaderContainer.gridDataColumns = result = [];
+            gridHeaderContainer.cascade(function(c) {
+                if ((c !== gridHeaderContainer) && !c.isGroupHeader) {
+                    result.push(c);
+                }
+            });
+        }
+        return result;
+    },
 
-	setFilterBar: function(property, value, operator) {
-		var me = this;
+    //private
+    getFirstField: function() {
+        var me = this,
+            field = undefined;
+        // -- Ext.each(me.grid.headerCt.getGridColumns(), function(col) {
+        // ++ Ext.each(me.getGridColumns(), function(col) {
+        Ext.each(me.getGridColumns(), function(col) {
+            if (col.filter) {
+                field = me.fields.get(col.dataIndex);
+                return false;
+            }
+        });
 
-		me.grid.filterBar.fields.eachKey(function(index, field){
-			if(index == property) {
-				if (operator) {
-					field.operator = operator;
-				};
-				field.setValue(value);
-			}
-		})
-	},
+        return field;
+    },
 
-	isVisible: function() {
-		var me = this;
+    //private
+    focusFirstField: function() {
+        var me = this;
 
-		return me.visible;
-	},
+        var field = me.getFirstField();
 
-	setVisible: function(visible) {
-		var me = this;
-                /*
-                 * Commented to activate filter bar row
-                 
-		me.containers.each(function(item) {
-			item.setVisible(visible);
-		});
-                */
-               
-               /*
-                * Added to activate filter bar row
-                */
-                me.filterBar.setVisible(visible);
-               
-		if (visible) {
-			me.focusFirstField();
-		}
-		me.grid.headerCt.doLayout();
-		me.visible = visible;
-	},
+        if (field) {
+            field.focus(false, 200);
+        }
+    },
 
-	columnmove: function(ct, column, fromIdx, toIdx, eOpts){
-		var me = this;
-		me.grid.removeDocked( me.filterBar, true );
-		me.grid.headerCt.remove( me.extraColumn, true );
-		me.setup(me.grid);
-	}
+    clearFilters: function() {
+        var me = this;
+
+        if (me.filterArray.length == 0) return;
+        me.filterArray = [];
+        me.fields.eachKey(function(key, field) {
+            field.suspendEvents();
+            field.reset();
+            field.resumeEvents();
+            var column = me.columns.get(key);
+            if(column.getEl().hasCls(Ext.baseCSSPrefix + 'column-filtered')) {
+                column.getEl().removeCls(Ext.baseCSSPrefix + 'column-filtered');
+            }
+        }, me);
+        me.grid.store.clearFilter();
+        if (me.clearAllEl) {
+            me.clearAllEl.hide({duration: 1000});
+        }
+
+        me.fireEvent('filterupdated', me.filterArray);
+    },
+
+    setFilterBar: function(property, value, operator) {
+        var me = this;
+
+        me.grid.filterBar.fields.eachKey(function(index, field){
+            if(index == property) {
+                if (operator) {
+                    field.operator = operator;
+                };
+                field.setValue(value);
+            }
+        })
+    },
+
+    isVisible: function() {
+        var me = this;
+
+        return me.visible;
+    },
+
+    setVisible: function(visible) {
+        var me = this;
+        /*
+         * Commented to activate filter bar row
+
+         me.containers.each(function(item) {
+         item.setVisible(visible);
+         });
+         */
+
+        /*
+         * Added to activate filter bar row
+         */
+        me.filterBar.setVisible(visible);
+
+        if (visible) {
+            me.focusFirstField();
+        }
+        me.grid.headerCt.doLayout();
+        me.visible = visible;
+    },
+
+    columnmove: function(ct, column, fromIdx, toIdx, eOpts){
+        var me = this;
+        me.grid.removeDocked( me.filterBar, true );
+        me.grid.headerCt.remove( me.extraColumn, true );
+        me.setup(me.grid);
+    }
 });
